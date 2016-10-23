@@ -18,7 +18,6 @@ router.get('/', function(req, res, next) {
         max: max
       };
     }
-    console.log('Iterations: ' + iterations);
     request.get(options, function(error, resp, body) {
       if (error) next(error);
       let b = JSON.parse(body);

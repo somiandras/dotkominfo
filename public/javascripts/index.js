@@ -1,56 +1,14 @@
 (function(window, document) {
   'use strict';
 
-  let dummy = document.getElementById('dummy');
-  dummy.addEventListener('click', () => {
-    return getData('dummydata');
-  });
+  let refresh = document.getElementById('refresh');
+  refresh.addEventListener('click', getData);
 
-  let data = document.getElementById('data');
-  data.addEventListener('click', () => {
-    return getData('data');
-  });
-
-  function drawRandomChart() {
-    let randomData = createRandomData();
-    console.log(randomData);
-    drawPack(randomData);
-  }
-
-  function createRandomData() {
-    let companies = [];
-    let numberOfCompanies = Math.floor(Math.random() * (300 - 50) + 50);
-
-    for (let i = 0; i < numberOfCompanies; i++) {
-      let company = createCompany();
-      let count = Math.round(Math.random() * (1000 - 1) + 1);
-      company.count = count;
-      companies.push(company);
-    }
-
-    return companies;
-  }
-
-  function createCompany() {
-    let ticker = '';
-    for (let j = 0; j < 3; j++) {
-      let charcode = Math.random() * (90 - 65) + 65;
-      ticker = ticker.concat(String.fromCharCode(charcode));
-    }
-    let title = ticker + ' Corp.';
-    return {
-      symbol: ticker,
-      title: title
-    };
-  }
-
-  function getData(mode) {
-    mode = mode || 'dummydata';
-    let url = '/' + mode;
-    console.log('Getting data in ' + mode + ' mode');
+  function getData(event) {
+    event.target.innerHTML = 'Reload';
     let xhr = new XMLHttpRequest();
     xhr.addEventListener('load', reqListener);
-    xhr.open('GET', url);
+    xhr.open('GET', '/dummydata');
     xhr.send();
   }
 
@@ -58,8 +16,6 @@
     if (this.status === 200) {
       let data = JSON.parse(this.responseText);
       extractData(data);
-      console.log('Min: ' + d3.min(data, d => new Date(d.created_at)));
-      console.log('Max: ' + d3.max(data, d => new Date(d.created_at)));
     } else {
       console.log(this.responseText);
     }
@@ -83,6 +39,13 @@
       }
     });
     drawPack(arrayify(data));
+
+    let textData = {
+      messages: messages.length,
+      minDate: d3.min(messages, d => new Date(d.created_at)),
+      maxDate: d3.max(messages, d => new Date(d.created_at))
+    };
+    addTexts(textData);
   }
 
   function arrayify(data) {
@@ -97,28 +60,34 @@
     return array;
   }
 
-  function drawPack(data) {
+  function drawPack(data, textData) {
+    // Remove bubbles and caption before creating any new
     d3.select('svg').selectAll('g').remove();
+    d3.selectAll('.caption').remove();
 
-    let diameter = 600;
+    // Create hierarchy from data
     let nodes = {
       children: data
     };
-
     let root = d3.hierarchy(nodes)
     .sum(d => d.count)
-    .sort((a, b) => b.value - a.value);
+    // .sort((a, b) => b.value - a.value);
 
+    // Create pack layout
+    let diameter = 600;
     let pack = d3.pack().size([diameter, diameter]).padding(2);
-    let circleColor = d3.scaleLinear()
-    .domain([d3.min(nodes.children, d => d.count), d3.max(nodes.children, d => d.count)])
-    .range(['#1F3570', '#8117DE'])
-    .interpolate(d3.interpolateHcl);
+
+    // Color scale
+    let circleColor = d3.scaleLog()
+    .domain([d3.min(nodes.children, d => d.count),
+      d3.max(nodes.children, d => d.count)])
+    .range(['#9FC3FF', '#2F2BAD'])
+    .interpolate(d3.interpolateHsl);
 
     // Root svg
     let svg = d3.select('svg')
     .attr('width', 900)
-    .attr('height', diameter);
+    .attr('height', diameter + 100);
 
     // Data enter
     let node = svg.selectAll('.node')
@@ -128,24 +97,25 @@
     .attr('class', 'node')
     .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')');
 
-    // Bubbles
+    // Add bubbles
     node.append('circle')
-    .attr('r', d => d.r)
-    .style('fill', 'white')
+    .style('fill', d => circleColor(d.data.count))
     .transition()
     .duration(600)
     .delay((d, i) => {
       let delay;
       if (d.r > 10) {
-        delay = i * 20;
-      } else {
         delay = i * 10;
+      } else {
+        delay = i * 5;
       }
       return delay;
     })
-    .style('fill', d => circleColor(d.data.count))
+    .ease(d3.easeBackOut)
+    .attr('r', d => d.r)
     .call(endAll, attachListeners);
 
+    // Wait for the end of all bubble transitions
     function endAll(transition, callback) {
       if (!callback) callback = function() {};
       if (transition.size === 0) {
@@ -168,14 +138,16 @@
     .style('opacity', 0)
     .style('text-anchor', 'middle')
     .style('font-family', 'arial')
-    .style('font-size', 11)
+    .style('font-size', d => {
+      return Math.floor(d.r / 20) + 10;
+    })
     .style('fill', '#ffffff')
     .style('pointer-events', 'none')
     .filter(d => d.r > 20)
     .text(d => d.data.name)
     .transition()
     .duration(1000)
-    .delay((d, i) => i * 30)
+    .delay((d, i) => i * 10)
     .style('opacity', 1);
 
     // Data exit
@@ -229,5 +201,28 @@
         svg.select('.legend').remove();
       });
     }
+  }
+
+  // Add caption
+  function addTexts(textData) {
+    let caption = `Cashtag mentions from ${textData.messages} 
+    StockTwits trending messages between ${textData.minDate.toLocaleString()} 
+    and ${textData.maxDate.toLocaleString()}.`;
+
+    let svg = d3.select('svg');
+
+    svg.append('text').attr('class', 'caption')
+    .attr('transform', 'translate(' + 0 + ',' + (svg.attr('height') - 60) + ')')
+    .attr('y', 50)
+    .style('fill', '#888888')
+    .style('opacity', 0)
+    .style('font-size', '13')
+    .transition()
+    .duration(1000)
+    .delay(1250)
+    .ease(d3.easeCubicOut)
+    .attr('y', 0)
+    .style('opacity', 1)
+    .text(caption);
   }
 })(window, document);
