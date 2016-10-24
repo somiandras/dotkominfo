@@ -1,25 +1,32 @@
 (function(window, document) {
   'use strict';
 
-  let refresh = document.getElementById('refresh');
-  refresh.addEventListener('click', getData);
+  d3.json('../data/test_data.json', d => {
+    window.setTimeout(() => {
+      extractData(d);
+    }, 600);
 
-  function getData(event) {
-    event.target.innerHTML = 'Reload';
-    let xhr = new XMLHttpRequest();
-    xhr.addEventListener('load', reqListener);
-    xhr.open('GET', '/dummydata');
-    xhr.send();
-  }
+    let refresh = document.getElementById('refresh');
+    refresh.addEventListener('click', () => {
+      return extractData(d);
+    });
+  });
 
-  function reqListener() {
-    if (this.status === 200) {
-      let data = JSON.parse(this.responseText);
-      extractData(data);
-    } else {
-      console.log(this.responseText);
-    }
-  }
+  // function getData(event) {
+  //   let xhr = new XMLHttpRequest();
+  //   xhr.addEventListener('load', reqListener);
+  //   xhr.open('GET', '/dummydata');
+  //   xhr.send();
+  // }
+
+  // function reqListener() {
+  //   if (this.status === 200) {
+  //     let data = JSON.parse(this.responseText);
+  //     extractData(data);
+  //   } else {
+  //     console.log(this.responseText);
+  //   }
+  // }
 
   function extractData(messages) {
     let data = {};
@@ -84,6 +91,12 @@
     .range(['#9FC3FF', '#2F2BAD'])
     .interpolate(d3.interpolateHsl);
 
+    // Scale for circles' movement
+    let yScale = d3.scaleLog()
+    .domain([d3.min(nodes.children, d => d.count),
+      d3.max(nodes.children, d => d.count)])
+    .range([10, 150]);
+
     // Root svg
     let svg = d3.select('svg')
     .attr('width', 900)
@@ -100,11 +113,15 @@
     // Add bubbles
     node.append('circle')
     .style('fill', d => circleColor(d.data.count))
+    .attr('cy', d => yScale(d.data.count))
+    .style('opacity', 0)
     .transition()
     .duration(600)
+    .attr('cy', 0)
+    .style('opacity', 1)
     .delay((d, i) => {
       let delay;
-      if (d.r > 10) {
+      if (d.r > 30) {
         delay = i * 10;
       } else {
         delay = i * 5;
@@ -147,16 +164,8 @@
     .text(d => d.data.name)
     .transition()
     .duration(1000)
-    .delay((d, i) => i * 10)
+    .delay((d, i) => i * 40)
     .style('opacity', 1);
-
-    // Data exit
-    node
-    .exit()
-    .transition()
-    .duration(600)
-    .style('opacity', 0)
-    .remove();
 
     // Events
     function attachListeners() {
@@ -218,8 +227,8 @@
     .style('opacity', 0)
     .style('font-size', '13')
     .transition()
-    .duration(1000)
-    .delay(1250)
+    .duration(1300)
+    .delay(1500)
     .ease(d3.easeCubicOut)
     .attr('y', 0)
     .style('opacity', 1)
