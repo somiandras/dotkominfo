@@ -1,12 +1,12 @@
 (function(window, document) {
   'use strict';
 
+  let refresh = document.getElementById('refresh');
+
   d3.json('../data/test_data.json', d => {
     window.setTimeout(() => {
       extractData(d);
     }, 600);
-
-    let refresh = document.getElementById('refresh');
     refresh.addEventListener('click', () => {
       return extractData(d);
     });
