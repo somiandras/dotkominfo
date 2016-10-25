@@ -12,22 +12,6 @@
     });
   });
 
-  // function getData(event) {
-  //   let xhr = new XMLHttpRequest();
-  //   xhr.addEventListener('load', reqListener);
-  //   xhr.open('GET', '/dummydata');
-  //   xhr.send();
-  // }
-
-  // function reqListener() {
-  //   if (this.status === 200) {
-  //     let data = JSON.parse(this.responseText);
-  //     extractData(data);
-  //   } else {
-  //     console.log(this.responseText);
-  //   }
-  // }
-
   function extractData(messages) {
     let data = {};
     messages.forEach(message => {
@@ -77,8 +61,7 @@
       children: data
     };
     let root = d3.hierarchy(nodes)
-    .sum(d => d.count)
-    // .sort((a, b) => b.value - a.value);
+    .sum(d => d.count);
 
     // Create pack layout
     let diameter = 600;
