@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "nodemon ./bin/www ENV=development",
-    "start": "nodemon ./bin/www"
+    "start": "nodemon ./bin/www PORT=8080"
   },
   "dependencies": {
     "body-parser": "~1.15.1",
