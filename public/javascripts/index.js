@@ -3,13 +3,9 @@
 
   let refresh = document.getElementById('refresh');
 
-  d3.json('../data/test_data.json', d => {
-    window.setTimeout(() => {
-      extractData(d);
-    }, 600);
-    refresh.addEventListener('click', () => {
-      return extractData(d);
-    });
+  d3.json('/testdata', d => {
+    extractData(d);
+    refresh.addEventListener('click', () => extractData(d));
   });
 
   function extractData(messages) {
