@@ -3,10 +3,12 @@
 
   let refresh = document.getElementById('refresh');
 
-  d3.json('/testdata', d => {
-    extractData(d);
-    refresh.addEventListener('click', () => extractData(d));
-  });
+  window.onload = function() {
+    d3.json('/testdata', d => {
+      extractData(d);
+      refresh.addEventListener('click', () => extractData(d));
+    });
+  };
 
   function extractData(messages) {
     let data = {};
