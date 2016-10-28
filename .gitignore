@@ -2,3 +2,5 @@
 node_modules/
 dotkominfo.sublime-project
 dotkominfo.sublime-workspace
+# Temporary JSON created by Stocktwits downloader module
+new_data.json

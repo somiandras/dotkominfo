@@ -27,7 +27,7 @@ router.get('/', function(req, res, next) {
         counter += 1;
         makeRequest(options, iterations, counter, data, b.cursor.max);
       } else {
-        fs.writeFile('test_data.json', JSON.stringify(data, null, 2), function(err) {
+        fs.writeFile('new_data.json', JSON.stringify(data, null, 2), function(err) {
           if (err) console.log(err);
           console.log('File ready');
           res.status(200).send(data);
@@ -35,6 +35,12 @@ router.get('/', function(req, res, next) {
       }
     });
   }
+});
+
+router.get('/testdata', function(req, res, next) {
+  let staticJSON = require('../public/data/test_data.json');
+  res.status(200)
+  .send(staticJSON);
 });
 
 module.exports = router;
